@@ -1,0 +1,31 @@
+
+(defun zprompt/save-buffer ()
+  (interactive)
+  (when (buffer-file-name)
+      (let* ((original-file-path (buffer-file-name))
+             (hex-encoded-path (url-hexify-string original-file-path))
+             (destination-dir (expand-file-name "~/var/emacs-state"))
+             (destination-file (concat destination-dir "/" hex-encoded-path)))
+	(if (< (point-max) 100000)
+	    (write-region nil nil destination-file nil 'quiet)))))
+
+(defun zprompt/save-point ()
+  (interactive)
+  (let* ((buffer-name (buffer-file-name))
+         (point (point))
+         (data `((buffer . ,buffer-name) (point . ,point)))
+         (json-data (json-serialize data :null-object nil :false-object :json-false))
+         (json-file (expand-file-name "~/var/emacs-state/point.json"))
+	 (inhibit-message t))
+    (write-region json-data nil json-file)))
+
+(add-hook 'post-command-hook 'zprompt/save-buffer)
+(add-hook 'post-command-hook 'zprompt/save-point)
+
+(defun my-prompt-expand ()
+  (interactive)
+  (zprompt/save-buffer)
+  (zprompt/save-point)
+  (call-process "~/r/zprompt/expand.sh")) 
+
+(global-set-key (kbd "M-<return>") 'my-prompt-expand)
