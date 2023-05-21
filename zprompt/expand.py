@@ -9,9 +9,12 @@ def main():
     point = state['point']-1
     shortcut = sys.argv[1]
     allocated_shortcuts = read_json(state_path + '/allocated_shortcuts.json')
-            
-    if shortcut in allocated_shortcuts:
-        suggestion = allocated_shortcuts[shortcut]
+    by_shortcut = { s['shortcut']:s for s in allocated_shortcuts }
+    suggestion = by_shortcut.get(shortcut)
+    if shortcut == '':
+        suggestion = allocated_shortcuts[0]
+    
+    if suggestion:
         insert_at = suggestion['start']
 
         text = suggestion['text']
@@ -24,9 +27,8 @@ def main():
             'point': insert_at + 1,
             'text': text,
         }))
-
-# /etc/pass
-# (read-from-minibuffer "shortcut:")
+    else:
+        print(json.dumps({'point': insert_at + 1, 'text': ''}))
         
 if __name__ == '__main__':
     main()

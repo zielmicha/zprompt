@@ -1,14 +1,22 @@
 import os, urllib.parse, re, json, time, subprocess, sys, string
 from zprompt.expect_test import expect, test_case
 from zprompt import fzflike
-from zprompt import plugin_paths
 from zprompt.core import Suggestion, ObjectInfo
 from zprompt.prompts import load_state, extract_around_cursor, state_path
 from zprompt.common import read_file, write_file
 
+def get_plugins():
+    from zprompt import plugin_paths, plugin_cmd
+    return [plugin_paths, plugin_cmd]
+    
 def refresh(state):
     prompts = extract_around_cursor(state)
-    results = plugin_paths.process_prompt(state, prompts)
+    results = []
+    for p in get_plugins():
+        results += p.process_prompt(state, prompts)
+
+    if prompts['code-block']:
+        results.append(ObjectInfo(prompts['code-block']))
 
     return results
 
@@ -30,7 +38,7 @@ def render_suggestion(shortcut, suggestion):
     return shortcut + ' ' + suggestion.text
 
 def save_allocated(allocated):
-    write_file(state_path + '/allocated_shortcuts.json' , json.dumps({ shortcut: {'start': s.start, 'text': s.text}   for shortcut, s in allocated }))
+    write_file(state_path + '/allocated_shortcuts.json' , json.dumps([  {'start': s.start, 'text': s.text, 'shortcut': shortcut}   for shortcut, s in allocated ]))
 
 def render(output, results):
     width, height = os.get_terminal_size()
@@ -56,7 +64,7 @@ def render(output, results):
 def main():
     prev_state = None
     output = sys.stdout
-    sys.stdout = sys.stderr = open(os.path.expanduser('~/var/emacs-state/log.txt'), 'w', 1)
+    sys.stdout = sys.stderr = open(os.path.expanduser('~/var/zprompt/log.txt'), 'w', 1)
     while True:
         time.sleep(0.05)
         

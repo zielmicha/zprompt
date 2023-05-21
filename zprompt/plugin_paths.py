@@ -1,8 +1,6 @@
 import subprocess, glob, os
 from zprompt.core import Suggestion, ObjectInfo
 
-# /etc/passwd
-
 def extract_path_from_word(word):
     if '~/' in word:
         return '~/' + word.split('~/', 1)[1]
@@ -59,3 +57,4 @@ def path_info(state, prompts):
     
 def process_prompt(state, prompts):
     return suggest_path_completions(state, prompts) + path_info(state, prompts)
+

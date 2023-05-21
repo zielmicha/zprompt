@@ -13,6 +13,17 @@ def query(*args):
         cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
         cur.execute(*args)
         return pl.DataFrame(list( dict(i) for i in cur))
+        
+def query_one(*args):
+    with make_conn() as conn:
+        cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cur.execute(*args)
+        return cur.fetchone()
+
+def query_no_result(*args):
+    with make_conn() as conn:
+        cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cur.execute(*args)
 
 if __name__ == '__main__':
     print(query('select 1 as foo'))
