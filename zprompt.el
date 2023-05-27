@@ -92,8 +92,8 @@
   "Enables copy mode after process termination."
   (save-window-excursion
     (switch-to-buffer buf)
-    (set-buffer-modified-p nil)
-    (vterm-copy-mode 1)))
+    (vterm-copy-mode 1)
+    (set-buffer-modified-p nil)))
 
 ;(setq vterm-exit-functions nil)
 (add-hook 'vterm-exit-functions 'zprompt/vterm-after-exit)
@@ -103,4 +103,16 @@
   (interactive)
   (ansi-color-apply-on-region (point-min) (point-max)))
 
+(defun zprompt/output-mode ()
+  (interactive)
+  (ansi-color-apply-on-region (point-min) (point-max))
+  (read-only-mode 't)
+  (set-buffer-modified-p nil)
+  )
+
+
 (setq vterm-copy-mode-remove-fake-newlines 't)
+
+;(setq auto-mode-alist (cdr auto-mode-alist))
+
+(add-to-list 'auto-mode-alist '("\\.zprompt\\.out/[^.]+\\'" . zprompt/output-mode))

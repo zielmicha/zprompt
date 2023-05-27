@@ -20,6 +20,7 @@ def make_command(command_runner, rest):
         return ['echo', 'unknown command_runner %r' % command_runner]
 
 def main(out_filename):
+    os.chdir(os.path.dirname(os.path.dirname(out_filename)))
     meta_filename = out_filename + '.meta.json'
     meta = read_json(meta_filename)
     title = out_filename
@@ -47,6 +48,7 @@ def main(out_filename):
         print('[result: %d]' % r.returncode)
 
     with update_json(meta_filename) as data:
+        data['exit_code'] = r.returncode
         data['finished_at'] = time.time()
         
 if __name__ == '__main__':
