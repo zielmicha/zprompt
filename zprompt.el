@@ -79,21 +79,57 @@
 
 (global-set-key (kbd "S-C-<return>") 'zprompt-exec)
 
+(defun zprompt/get-frame-history ()
+  (setq zprompt/frame-history (cl-delete-if-not #'frame-live-p zprompt/frame-history))
+  zprompt/frame-history
+  )
+
 (defun zprompt/run-in-new-vterm (filename command)
   (interactive "sCommand: ")
-  (let* (
-	 (vterm-shell command))
-    (vterm-other-window)
-    (set-visited-file-name filename)
+    (zprompt/push-frame (selected-frame))
+    (let* (
+	   (vterm-shell command)
+	   (frame (car (last (zprompt/get-frame-history))))
+	   )
+      (select-frame frame)
+      (zprompt/push-frame frame)
+      (vterm)
+      (set-visited-file-name filename)
     ))
 
+(defun zprompt/prev-window ()
+  (interactive)
+  (let (
+	 (frame (cadr (zprompt/get-frame-history)))
+	 )
+    (select-frame frame)
+    (x-focus-frame frame)
+    (zprompt/push-frame frame)
+    ))
+
+(global-set-key (kbd "C-x o") 'zprompt/prev-window)
+
+(setq zprompt/vterm-has-exited nil)
+(set (make-variable-buffer-local 'zprompt/vterm-has-exited) nil)
 
 (defun zprompt/vterm-after-exit (buf event)
   "Enables copy mode after process termination."
   (save-window-excursion
-    (switch-to-buffer buf)
+    (set-buffer buf)
     (vterm-copy-mode 1)
+    (setq zprompt/vterm-has-exited 't)
     (set-buffer-modified-p nil)))
+
+(defun zprompt/kill-this-buffer ()
+  (interactive)
+  (when zprompt/vterm-has-exited
+    (set-buffer-modified-p nil)
+    )
+  
+  (kill-buffer (current-buffer)))
+
+(global-set-key (kbd "C-x k") 'zprompt/kill-this-buffer)
+
 
 ;(setq vterm-exit-functions nil)
 (add-hook 'vterm-exit-functions 'zprompt/vterm-after-exit)
@@ -116,3 +152,26 @@
 ;(setq auto-mode-alist (cdr auto-mode-alist))
 
 (add-to-list 'auto-mode-alist '("\\.zprompt\\.out/[^.]+\\'" . zprompt/output-mode))
+
+(defun zprompt/tmp-buffer (name)
+  (interactive "sName: ")
+  (find-file (concat "~/tmp/" name ".zprompt"))
+  )
+
+;(global-set-key (kbd "C-x b") 'switch-buffer)
+
+(setq zprompt/frame-history nil)
+
+(defun zprompt/push-frame (f)
+  (setq zprompt/frame-history (cons f (delete f zprompt/frame-history))))
+
+(defun zprompt/window-selection-changed ()
+  
+  (let ((focused-frame (seq-find (lambda (frame)
+                                   (eq (frame-focus-state frame) t))
+				 (visible-frame-list))))
+
+    (zprompt/push-frame focused-frame)))
+  
+;(remove-hook 'window-selection-change-functions 'zprompt/window-selection-changed)
+(add-hook 'focus-in-hook 'zprompt/window-selection-changed)
