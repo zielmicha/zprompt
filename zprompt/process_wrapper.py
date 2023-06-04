@@ -11,8 +11,17 @@ def get_ssh_hosts():
             if '*' in hostname: continue
             yield hostname
 
+def join_command(args):
+    return ' '.join([ shlex.quote(cmd) for cmd in args ])
+            
 def make_command(command_runner, rest):
-    if command_runner == 'b':
+    if command_runner == 'py' or command_runner.startswith('py:'):
+        cmd = ['python3', '-c', rest]
+        if command_runner == 'py':
+            return cmd
+        else:
+            return make_command(command_runner[3:], join_command(cmd))
+    elif command_runner == 'b':
         return ['sh', '-c', rest]
     elif command_runner in list(get_ssh_hosts()):
         return ['ssh', '-t', command_runner, rest]
@@ -34,18 +43,17 @@ def main(out_filename):
 
     wrapped_command = make_command(command_runner, rest)
     
-                
+    print('[running]', command_runner, rest)
     r = subprocess.run([
         'script',
         '--flush',
         '--quiet',
         '--return',
         '--command',
-        ' '.join([ shlex.quote(cmd) for cmd in wrapped_command ]),
+        join_command(wrapped_command),
         out_filename])
 
-    if r.returncode != 0:
-        print('[result: %d]' % r.returncode)
+    print('[result: %d]' % r.returncode)
 
     with update_json(meta_filename) as data:
         data['exit_code'] = r.returncode

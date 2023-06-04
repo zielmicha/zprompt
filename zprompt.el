@@ -81,6 +81,7 @@
 
 (defun zprompt/get-frame-history ()
   (setq zprompt/frame-history (cl-delete-if-not #'frame-live-p zprompt/frame-history))
+  (setq zprompt/frame-history (cl-delete-if (lambda (frame) (frame-parameter frame 'dedicated)) zprompt/frame-history))
   zprompt/frame-history
   )
 
@@ -157,6 +158,8 @@
   (interactive "sName: ")
   (find-file (concat "~/tmp/" name ".zprompt"))
   )
+
+(global-set-key (kbd "<f5>") 'zprompt/tmp-buffer)
 
 ;(global-set-key (kbd "C-x b") 'switch-buffer)
 
